@@ -1,4 +1,4 @@
-# Simulink PX4
+# Simulink PX4 - Pixhawk 2.4.8
 ![](resources/img/pixhawk_2.4.8.jpg)
 
 Esta placa es **PX4 Pixhawk 1 - px4_fmu-v3_default**.
