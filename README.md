@@ -32,3 +32,8 @@ usleep 1000
 px4_simulink_app start  
 ...
 ```
+
+## Ejemplos
+
+- px4_plant.slx - implementa un control sencillo PID para la orientación
+- px4demo_PWM.slx - implementa un simulink sencillo para enviar acciones de control y recibir mensajes de la pixhawk

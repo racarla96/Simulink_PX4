@@ -1,0 +1,108 @@
+#Copyright 2020 The MathWorks, Inc.
+# This is the custom rc.txt which loads px4_simulink_app on start-up
+
+set IOFW "/etc/extras/px4_io-v2_default.bin"
+
+# The following modules are always started by default rCS
+# https://github.com/PX4/Firmware/blob/v1.10.1/ROMFS/px4fmu_common/init.d/rcS
+# uorb
+# sercon
+
+#
+# Set the parameter file if mtd starts successfully.
+#
+if mtd start
+then
+    set PARAM_FILE /fs/mtd_params
+fi
+
+#
+# Load parameters.
+#
+param select $PARAM_FILE
+if ! param load
+then
+    param reset
+fi
+
+#
+# Start the socket communication send_event handler.
+#
+send_event start
+
+#
+# Start the resource load monitor.
+#
+load_mon start
+
+#
+# Start system state indicator.
+#
+rgbled start
+rgbled_ncp5623c start
+rgbled_pwm start
+
+if param greater LIGHT_EN_BLINKM 0
+then
+    if blinkm start
+    then
+        blinkm systemstate
+    fi
+fi
+
+#
+# Start the tone_alarm driver.
+# Needs to be started after the parameters are loaded (for CBRK_BUZZER).
+# Note that this will still play the already published startup tone.
+#
+tone_alarm start
+
+if [ -f $IOFW ]
+then
+    if px4io start
+    then
+        # Try to safety px4 io so motor outputs don't go crazy.
+        if ! px4io safety_on
+        then
+            # px4io did not respond to the safety command.
+            px4io stop
+        fi
+    fi
+fi
+
+#Starts GPS driver and Fake a GPS signal (useful for testing)  
+#gps start -f           
+
+#
+# board sensors: rc.sensors
+#
+set BOARD_RC_SENSORS /etc/init.d/rc.board_sensors
+if [ -f $BOARD_RC_SENSORS ]
+then
+    echo "Board sensors: ${BOARD_RC_SENSORS}"
+    sh $BOARD_RC_SENSORS
+fi
+unset BOARD_RC_SENSORS
+
+battery_status start
+
+sh /etc/init.d/rc.sensors
+
+#
+# Start UART/Serial device drivers.
+# Note: rc.serial is auto-generated from Tools/serial/generate_config.py
+#
+sh /etc/init.d/rc.serial
+
+#
+# Start the attitude and position estimator.
+#
+ekf2 start
+
+fmu mode_pwm            # This is required for AUX PWM channels
+usleep 1000
+px4io safety_off
+usleep 1000
+px4_simulink_app start          
+#exit #23-May-2020  
+
